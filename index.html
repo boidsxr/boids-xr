@@ -307,6 +307,7 @@
 
      import { GPUComputationRenderer } from './js/GPUComputationRenderer.js';
      import { VRButton } from './js/VRButton.js';
+     import { XRControllerModelFactory } from './js/XRControllerModelFactory.js';
 
 
      /* TEXTURE WIDTH FOR SIMULATION */
@@ -459,7 +460,31 @@
        renderer.setPixelRatio( window.devicePixelRatio );
        renderer.setSize( window.innerWidth, window.innerHeight );
        container.appendChild( renderer.domElement );
+
+       // VR Button
        document.body.appendChild(VRButton.createButton(renderer));
+
+       // VR controllers
+
+       const controller1 = renderer.xr.getController( 0 );
+//       controller1.addEventListener( 'selectstart', onSelectStart );
+//       controller1.addEventListener( 'selectend', onSelectEnd );
+       scene.add( controller1 );
+
+       const controller2 = renderer.xr.getController( 1 );
+//       controller2.addEventListener( 'selectstart', onSelectStart );
+//       controller2.addEventListener( 'selectend', onSelectEnd );
+       scene.add( controller2 );
+
+       const controllerModelFactory = new XRControllerModelFactory();
+
+       const controllerGrip1 = renderer.xr.getControllerGrip( 0 );
+       controllerGrip1.add( controllerModelFactory.createControllerModel( controllerGrip1 ) );
+       scene.add( controllerGrip1 );
+
+       const controllerGrip2 = renderer.xr.getControllerGrip( 1 );
+       controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
+       scene.add( controllerGrip2 );
 
        initComputeRenderer();
 
@@ -468,8 +493,6 @@
 
        container.style.touchAction = 'none';
        container.addEventListener( 'pointermove', onPointerMove );
-
-       //
 
        window.addEventListener( 'resize', onWindowResize );
 
@@ -501,21 +524,14 @@
        gui.close();
 
        initBirds();
-
-
-
      }
 
+
      function initComputeRenderer() {
-
        gpuCompute = new GPUComputationRenderer( WIDTH, WIDTH, renderer );
-
        if ( isSafari() ) {
-
          gpuCompute.setDataType( THREE.HalfFloatType );
-
        }
-
        const dtPosition = gpuCompute.createTexture();
        const dtVelocity = gpuCompute.createTexture();
        fillPositionTexture( dtPosition );
@@ -550,11 +566,8 @@
        const error = gpuCompute.init();
 
        if ( error !== null ) {
-
          console.error( error );
-
        }
-
      }
 
      function isSafari() {
@@ -582,7 +595,6 @@
          vertexShader: document.getElementById( 'birdVS' ).textContent,
          fragmentShader: document.getElementById( 'birdFS' ).textContent,
          side: THREE.DoubleSide
-
        } );
 
        const birdMesh = new THREE.Mesh( geometry, material );
@@ -591,86 +603,59 @@
        birdMesh.updateMatrix();
 
        scene.add( birdMesh );
-
      }
 
      function fillPositionTexture( texture ) {
-
        const theArray = texture.image.data;
-
        for ( let k = 0, kl = theArray.length; k < kl; k += 4 ) {
-
          const x = Math.random() * BOUNDS - BOUNDS_HALF;
          const y = Math.random() * BOUNDS - BOUNDS_HALF;
          const z = Math.random() * BOUNDS - BOUNDS_HALF;
-
          theArray[ k + 0 ] = x;
          theArray[ k + 1 ] = y;
          theArray[ k + 2 ] = z;
          theArray[ k + 3 ] = 1;
-
        }
-
      }
 
      function fillVelocityTexture( texture ) {
-
        const theArray = texture.image.data;
-
        for ( let k = 0, kl = theArray.length; k < kl; k += 4 ) {
-
          const x = Math.random() - 0.5;
          const y = Math.random() - 0.5;
          const z = Math.random() - 0.5;
-
          theArray[ k + 0 ] = x * 10;
          theArray[ k + 1 ] = y * 10;
          theArray[ k + 2 ] = z * 10;
          theArray[ k + 3 ] = 1;
-
        }
-
      }
 
      function onWindowResize() {
-
        windowHalfX = window.innerWidth / 2;
        windowHalfY = window.innerHeight / 2;
-
        camera.aspect = window.innerWidth / window.innerHeight;
        camera.updateProjectionMatrix();
-
        renderer.setSize( window.innerWidth, window.innerHeight );
-
      }
 
      function onPointerMove( event ) {
-
        if ( event.isPrimary === false ) return;
-
        mouseX = event.clientX - windowHalfX;
        mouseY = event.clientY - windowHalfY;
-
      }
 
-     //
 
      function animate() {
-
-       //                                requestAnimationFrame( animate );
-
-
-
+       // requestAnimationFrame( animate );
        render();
        stats.update();
-
      }
 
      renderer.setAnimationLoop(animate);
 
 
      function render() {
-
        const now = performance.now();
        let delta = ( now - last ) / 1000;
 
@@ -690,21 +675,15 @@
        mouseY = 10000;
 
        renderer.xr.enabled = false;
-
-
        gpuCompute.compute();
-
-       birdUniforms[ "texturePosition" ].value = gpuCompute.getCurrentRenderTarget( positionVariable ).texture;
-       birdUniforms[ "textureVelocity" ].value = gpuCompute.getCurrentRenderTarget( velocityVariable ).texture;
-
+       birdUniforms[ "texturePosition" ].value =
+         gpuCompute.getCurrentRenderTarget( positionVariable ).texture;
+       birdUniforms[ "textureVelocity" ].value =
+         gpuCompute.getCurrentRenderTarget( velocityVariable ).texture;
        renderer.xr.enabled = true;
 
-
-
        renderer.render( scene, camera );
-
      }
-
     </script>
   </body>
 </html>
