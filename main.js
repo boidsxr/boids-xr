@@ -105,12 +105,16 @@ let positionUniforms;
 let velocityUniforms;
 let birdUniforms;
 
-let font;
+let font, box;
+
+let controller1, controller2;
 
 init();
 setInterval(() => {
-  const now = new Date();
-  refreshText(now.toString().slice(16,24), font, scene)
+  const text = `${controller1.position.x.toFixed(2)},
+${controller1.position.y.toFixed(2)},
+${controller1.position.z.toFixed(2)}`;
+  refreshText(text, font, scene);
 }, 1000);
 animate();
 
@@ -122,8 +126,8 @@ function refreshText(text, font, scene) {
     text,
     {
       font,
-      size: 70,
-      height: 20,
+      size: 20,
+      height: 5,
     }
   );
   textGeo.computeBoundingBox();
@@ -145,7 +149,7 @@ function init() {
   container = document.createElement( 'div' );
   document.body.appendChild( container );
 
-  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 3000 );
+  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, .1, 3000 );
   camera.position.z = 350;
 
   scene = new THREE.Scene();
@@ -160,6 +164,14 @@ function init() {
   floor.receiveShadow = true;
   scene.add( floor );
 
+
+  const boxGeometry = new THREE.BoxGeometry( .2, .2, .2 );
+  const boxMaterial = new THREE.MeshPhongMaterial(
+    { color: 0xff0000, flatShading: true }
+  );
+  box = new THREE.Mesh( boxGeometry, boxMaterial );
+  box.position.z = -100;
+  scene.add( box );
 
   // ==== text
   const loader = new THREE.FontLoader();
@@ -193,12 +205,12 @@ function init() {
 
   // VR controllers
 
-  const controller1 = renderer.xr.getController( 0 );
+  controller1 = renderer.xr.getController( 0 );
   //       controller1.addEventListener( 'selectstart', onSelectStart );
   //       controller1.addEventListener( 'selectend', onSelectEnd );
   scene.add( controller1 );
 
-  const controller2 = renderer.xr.getController( 1 );
+  controller2 = renderer.xr.getController( 1 );
   //       controller2.addEventListener( 'selectstart', onSelectStart );
   //       controller2.addEventListener( 'selectend', onSelectEnd );
   scene.add( controller2 );
@@ -383,6 +395,9 @@ function onPointerMove( event ) {
 
 function animate() {
   // requestAnimationFrame( animate );
+  box.position.x = controller1.position.x //+.1;
+  box.position.y = controller1.position.y //+.1;
+  box.position.z = controller1.position.z //-1;
   render();
   stats.update();
 }
@@ -392,7 +407,6 @@ renderer.setAnimationLoop(animate);
 
 function render() {
   const now = performance.now();
-
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
