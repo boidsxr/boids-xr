@@ -9,12 +9,14 @@ import { VRButton } from './js/VRButton.js';
 import { XRControllerModelFactory } from './js/XRControllerModelFactory.js';
 
 
+import { xrLog } from './xr-console.module.js';
+
 /* TEXTURE WIDTH FOR SIMULATION */
 const WIDTH = 32;
 
 const BIRDS = WIDTH * WIDTH;
 
-const showBoids = false;
+const showBoids = true;
 
 
 // Custom Geometry - using 3 triangles each. No UVs, no normals currently.
@@ -89,10 +91,10 @@ if (showBoids) {
 
 let container, stats;
 let camera, scene, renderer;
-let mouseX = 0, mouseY = 0;
+//let mouseX = 0, mouseY = 0;
 
-let windowHalfX = window.innerWidth / 2;
-let windowHalfY = window.innerHeight / 2;
+//let windowHalfX = window.innerWidth / 2;
+//let windowHalfY = window.innerHeight / 2;
 
 const BOUNDS = 800, BOUNDS_HALF = BOUNDS / 2;
 
@@ -108,42 +110,17 @@ let birdUniforms;
 let font, box;
 
 let controller1, controller2;
+let ctl1InitialPos = null;
 
 init();
 setInterval(() => {
   const text = `${controller1.position.x.toFixed(2)},
 ${controller1.position.y.toFixed(2)},
 ${controller1.position.z.toFixed(2)}`;
-  refreshText(text, font, scene);
+  xrLog(text, font, scene);
 }, 1000);
 animate();
 
-
-let textMesh1;
-function refreshText(text, font, scene) {
-  if (textMesh1) scene.remove(textMesh1);
-  const textGeo = new THREE.TextGeometry(
-    text,
-    {
-      font,
-      size: 20,
-      height: 5,
-    }
-  );
-  textGeo.computeBoundingBox();
-  const textMaterials = [
-    new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } ), // front
-    new THREE.MeshPhongMaterial( { color: 0xffffff } ) // side
-  ];
-  textMesh1 = new THREE.Mesh( textGeo, textMaterials );
-  const centerOffset = - 0.5 * ( textGeo.boundingBox.max.x - textGeo.boundingBox.min.x );
-  textMesh1.position.x = centerOffset;
-  textMesh1.position.y = 30;
-  textMesh1.position.z = -100;
-  textMesh1.rotation.x = 0;
-  textMesh1.rotation.y = Math.PI * 2;
-  scene.add(textMesh1);
-}
 
 function init() {
   container = document.createElement( 'div' );
@@ -164,20 +141,18 @@ function init() {
   floor.receiveShadow = true;
   scene.add( floor );
 
-
+  // box-cursor
   const boxGeometry = new THREE.BoxGeometry( .2, .2, .2 );
   const boxMaterial = new THREE.MeshPhongMaterial(
     { color: 0xff0000, flatShading: true }
   );
   box = new THREE.Mesh( boxGeometry, boxMaterial );
-  box.position.z = -100;
   scene.add( box );
 
   // ==== text
   const loader = new THREE.FontLoader();
   loader.load('optimer_bold.typeface.json', response => {
     font = response;
-//    refreshText('', font, scene);
   });
 
 
@@ -237,9 +212,9 @@ function init() {
 
   container.style.touchAction = 'none';
 
-  if (showBoids) {
-    container.addEventListener( 'pointermove', onPointerMove );
-  }
+//  if (showBoids) {
+//    container.addEventListener( 'pointermove', onPointerMove );
+//  }
 
   window.addEventListener( 'resize', onWindowResize );
 
@@ -379,34 +354,51 @@ function fillVelocityTexture( texture ) {
 }
 
 function onWindowResize() {
-  windowHalfX = window.innerWidth / 2;
-  windowHalfY = window.innerHeight / 2;
+//  windowHalfX = window.innerWidth / 2;
+//  windowHalfY = window.innerHeight / 2;
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
+/*
 function onPointerMove( event ) {
   if ( event.isPrimary === false ) return;
   mouseX = event.clientX - windowHalfX;
   mouseY = event.clientY - windowHalfY;
 }
-
+*/
 
 function animate() {
-  // requestAnimationFrame( animate );
-  box.position.x = controller1.position.x //+.1;
-  box.position.y = controller1.position.y //+.1;
-  box.position.z = controller1.position.z //-1;
   render();
   stats.update();
 }
 
 renderer.setAnimationLoop(animate);
 
+const ctlMul = 200;
 
 function render() {
   const now = performance.now();
+
+
+  if (!ctl1InitialPos &&
+      controller1.position.x !== 0.0 &&
+      controller1.position.y !== 0.0 &&
+      controller1.position.z !== 0.0) {
+    ctl1InitialPos = controller1.position.clone();
+  }
+
+
+  if (ctl1InitialPos) {
+    box.position.x =
+      (1 - ctlMul) * ctl1InitialPos.x + ctlMul * controller1.position.x;
+    box.position.y =
+      (1 - ctlMul) * ctl1InitialPos.y + ctlMul * controller1.position.y;
+    box.position.z =
+      (1 - ctlMul) * ctl1InitialPos.z + ctlMul * controller1.position.z;
+  }
+
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
@@ -423,10 +415,15 @@ function render() {
     birdUniforms[ 'time' ].value = now;
     birdUniforms[ 'delta' ].value = delta;
 
-    velocityUniforms[ 'predator' ].value.set( 0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0 );
+//    velocityUniforms[ 'predator' ].value.set( 0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0 );
 
-    mouseX = 10000;
-    mouseY = 10000;
+    velocityUniforms[ 'predator' ].value.set(box.position.x, box.position.y, box.position.z);
+
+
+//    console.log(23, velocityUniforms['predator'].value);
+
+//    mouseX = 10000;
+//    mouseY = 10000;
 
     renderer.xr.enabled = false;
     gpuCompute.compute();
