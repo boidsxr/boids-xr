@@ -107,16 +107,16 @@ let positionUniforms;
 let velocityUniforms;
 let birdUniforms;
 
-let font, box, wandGeometry;
+let font, cursor, wandGeometry;
 
 let controller1, controller2;
 let ctl1InitialPos = null;
 
 init();
 setInterval(() => {
-  const text = `${box.position.x.toFixed(2)},
-${box.position.y.toFixed(2)},
-${box.position.z.toFixed(2)}`;
+  const text = `${cursor.position.x.toFixed(2)},
+${cursor.position.y.toFixed(2)},
+${cursor.position.z.toFixed(2)}`;
   xrLog(text, font, scene);
 }, 1000);
 animate();
@@ -151,12 +151,10 @@ function init() {
   scene.add( floor );
 
   // box-cursor
-  const boxGeometry = new THREE.BoxGeometry( .2, .2, .2 );
-  const boxMaterial = new THREE.MeshPhongMaterial(
-    { color: 0xff0000, flatShading: true, opacity: 0.5, transparent: true }
-  );
-  box = new THREE.Mesh( boxGeometry, boxMaterial );
-  scene.add( box );
+  const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
+  const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
+  cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
+  scene.add(cursor);
 
   // ==== text
   const loader = new THREE.FontLoader();
@@ -406,14 +404,14 @@ function render() {
 
 
   if (ctl1InitialPos) {
-    box.position.x =
+    cursor.position.x =
       (1 - ctlMul) * ctl1InitialPos.x + ctlMul * controller1.position.x;
-    box.position.y =
+    cursor.position.y =
       (1 - ctlMul) * ctl1InitialPos.y + ctlMul * controller1.position.y;
-    box.position.z =
+    cursor.position.z =
       (1 - ctlMul) * ctl1InitialPos.z + ctlMul * controller1.position.z;
 
-    setWand(controller1.position, box.position);
+    setWand(controller1.position, cursor.position);
 
 
   }
@@ -440,7 +438,11 @@ function render() {
 
 
     // should be within a cube with bounds [-.5, .5] */
-    velocityUniforms[ 'predator' ].value.set(box.position.x/4, (box.position.y-1.6)/4, box.position.z/4);
+    velocityUniforms[ 'predator' ].value.set(
+      cursor.position.x/4,
+      (cursor.position.y-1.6)/4,
+      cursor.position.z/4
+    );
 
 
 //    mouseX = 10000;
