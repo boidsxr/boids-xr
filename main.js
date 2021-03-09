@@ -107,7 +107,7 @@ let positionUniforms;
 let velocityUniforms;
 let birdUniforms;
 
-let font, box;
+let font, box, wandGeometry;
 
 let controller1, controller2;
 let ctl1InitialPos = null;
@@ -120,6 +120,15 @@ ${box.position.z.toFixed(2)}`;
   xrLog(text, font, scene);
 }, 1000);
 animate();
+
+
+
+function setWand(p1, p2) {
+  wandGeometry.attributes.position.setXYZ(0, p1.x, p1.y, p1.z);
+  wandGeometry.attributes.position.setXYZ(1, p2.x, p2.y, p2.z);
+  wandGeometry.attributes.position.needsUpdate = true;
+}
+
 
 
 function init() {
@@ -156,7 +165,14 @@ function init() {
   });
 
 
-
+  // magic wand
+  const wandMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
+  const wandPoints = [];
+  wandPoints.push( new THREE.Vector3( - 10, 0, 0 ) );
+  wandPoints.push( new THREE.Vector3( 10, 0, 0 ) );
+  wandGeometry = new THREE.BufferGeometry().setFromPoints( wandPoints );
+  const wand = new THREE.Line( wandGeometry, wandMaterial );
+  scene.add(wand);
 
   const spotLight = new THREE.SpotLight( 0xffffff );
   spotLight.position.set( 100, 1000, 100 );
@@ -396,6 +412,10 @@ function render() {
       (1 - ctlMul) * ctl1InitialPos.y + ctlMul * controller1.position.y;
     box.position.z =
       (1 - ctlMul) * ctl1InitialPos.z + ctlMul * controller1.position.z;
+
+    setWand(controller1.position, box.position);
+
+
   }
 
 
