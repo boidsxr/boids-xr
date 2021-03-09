@@ -114,9 +114,9 @@ let ctl1InitialPos = null;
 
 init();
 setInterval(() => {
-  const text = `${controller1.position.x.toFixed(2)},
-${controller1.position.y.toFixed(2)},
-${controller1.position.z.toFixed(2)}`;
+  const text = `${box.position.x.toFixed(2)},
+${box.position.y.toFixed(2)},
+${box.position.z.toFixed(2)}`;
   xrLog(text, font, scene);
 }, 1000);
 animate();
@@ -144,7 +144,7 @@ function init() {
   // box-cursor
   const boxGeometry = new THREE.BoxGeometry( .2, .2, .2 );
   const boxMaterial = new THREE.MeshPhongMaterial(
-    { color: 0xff0000, flatShading: true }
+    { color: 0xff0000, flatShading: true, opacity: 0.5, transparent: true }
   );
   box = new THREE.Mesh( boxGeometry, boxMaterial );
   scene.add( box );
@@ -361,13 +361,12 @@ function onWindowResize() {
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
-/*
-function onPointerMove( event ) {
-  if ( event.isPrimary === false ) return;
-  mouseX = event.clientX - windowHalfX;
-  mouseY = event.clientY - windowHalfY;
-}
-*/
+//function onPointerMove( event ) {
+//  if ( event.isPrimary === false ) return;
+//  mouseX = event.clientX - windowHalfX;
+//  mouseY = event.clientY - windowHalfY;
+//}
+
 
 function animate() {
   render();
@@ -376,7 +375,7 @@ function animate() {
 
 renderer.setAnimationLoop(animate);
 
-const ctlMul = 200;
+const ctlMul = 10;
 
 function render() {
   const now = performance.now();
@@ -417,10 +416,12 @@ function render() {
 
 //    velocityUniforms[ 'predator' ].value.set( 0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0 );
 
-    velocityUniforms[ 'predator' ].value.set(box.position.x, box.position.y, box.position.z);
-
-
 //    console.log(23, velocityUniforms['predator'].value);
+
+
+    // should be within a cube with bounds [-.5, .5] */
+    velocityUniforms[ 'predator' ].value.set(box.position.x/4, (box.position.y-1.6)/4, box.position.z/4);
+
 
 //    mouseX = 10000;
 //    mouseY = 10000;
