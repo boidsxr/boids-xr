@@ -1,9 +1,14 @@
 import * as THREE from './build/three.module.js';
 
+let font, textMesh1;
 
-let textMesh1;
+const loader = new THREE.FontLoader();
+loader.load('optimer_bold.typeface.json', response => {
+  font = response;
+});
 
-function xrLog(text, font, scene) {
+
+function xrLog(text, scene) {
   if (textMesh1) scene.remove(textMesh1);
   const textGeo = new THREE.TextGeometry(
     text,

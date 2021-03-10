@@ -9,13 +9,14 @@ import { VRButton } from './js/VRButton.js';
 import { XRControllerModelFactory } from './js/XRControllerModelFactory.js';
 
 
-import { xrLog } from './xr-console.module.js';
+// import { xrLog } from './xr-console.module.js';
 
 /* TEXTURE WIDTH FOR SIMULATION */
 const WIDTH = 32;
 
 const BIRDS = WIDTH * WIDTH;
 
+// Set to false to remove boids (for debugging)
 const showBoids = true;
 
 
@@ -91,10 +92,6 @@ if (showBoids) {
 
 let container, stats;
 let camera, scene, renderer;
-//let mouseX = 0, mouseY = 0;
-
-//let windowHalfX = window.innerWidth / 2;
-//let windowHalfY = window.innerHeight / 2;
 
 const BOUNDS = 800, BOUNDS_HALF = BOUNDS / 2;
 
@@ -107,21 +104,25 @@ let positionUniforms;
 let velocityUniforms;
 let birdUniforms;
 
-let font, cursor, wandGeometry;
+let cursor, wandGeometry;
 
 let controller1, controller2;
-let ctl1InitialPos = null;
+
+
 
 init();
+
+/*
 setInterval(() => {
   const text = `${cursor.position.x.toFixed(2)},
 ${cursor.position.y.toFixed(2)},
 ${cursor.position.z.toFixed(2)}`;
-  xrLog(text, font, scene);
+  xrLog(text, scene);
 }, 1000);
+*/
+
+
 animate();
-
-
 
 function setWand(p1, p2) {
   wandGeometry.attributes.position.setXYZ(0, p1.x, p1.y, p1.z);
@@ -139,9 +140,8 @@ function init() {
   camera.position.z = 350;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color( 0xffffff );
-  //                                scene.fog = new THREE.Fog( 0xffffff, 100, 1000 );
-
+  scene.background = new THREE.Color( 0x333399 );
+  scene.fog = new THREE.Fog( 0x333399, 800, 1000 );
 
   const floorGeometry = new THREE.BoxGeometry(2500, 10, 2500, 30, 1, 30);
   const floorMaterial = new THREE.MeshPhongMaterial( { color: 0x00FF00 } );
@@ -150,20 +150,13 @@ function init() {
   floor.receiveShadow = true;
   scene.add( floor );
 
-  // box-cursor
   const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
   const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
   cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
   scene.add(cursor);
 
-  // ==== text
-  const loader = new THREE.FontLoader();
-  loader.load('optimer_bold.typeface.json', response => {
-    font = response;
-  });
-
-
-  // magic wand
+  // magic wand: line that goes from the controller to the cursor
+  // to keep track of its position
   const wandMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
   const wandPoints = [];
   wandPoints.push( new THREE.Vector3( - 10, 0, 0 ) );
@@ -172,13 +165,14 @@ function init() {
   const wand = new THREE.Line( wandGeometry, wandMaterial );
   scene.add(wand);
 
+/*
   const spotLight = new THREE.SpotLight( 0xffffff );
   spotLight.position.set( 100, 1000, 100 );
   spotLight.shadow.camera.near = 100;
   spotLight.shadow.camera.far = 10000;
   spotLight.shadow.camera.fov = 50;
-
   scene.add( spotLight );
+*/
 
   scene.add( new THREE.HemisphereLight( 0x808080, 0x606060 ) );
 
@@ -223,12 +217,8 @@ function init() {
 
   stats = new Stats();
   container.appendChild( stats.dom );
-
   container.style.touchAction = 'none';
 
-//  if (showBoids) {
-//    container.addEventListener( 'pointermove', onPointerMove );
-//  }
 
   window.addEventListener( 'resize', onWindowResize );
 
@@ -250,7 +240,6 @@ function init() {
       velocityUniforms[ 'alignmentDistance' ].value = effectController.alignment;
       velocityUniforms[ 'cohesionDistance' ].value = effectController.cohesion;
       velocityUniforms[ 'freedomFactor' ].value = effectController.freedom;
-
     };
 
     valuesChanger();
@@ -368,19 +357,10 @@ function fillVelocityTexture( texture ) {
 }
 
 function onWindowResize() {
-//  windowHalfX = window.innerWidth / 2;
-//  windowHalfY = window.innerHeight / 2;
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
-
-//function onPointerMove( event ) {
-//  if ( event.isPrimary === false ) return;
-//  mouseX = event.clientX - windowHalfX;
-//  mouseY = event.clientY - windowHalfY;
-//}
-
 
 function animate() {
   render();
@@ -389,32 +369,25 @@ function animate() {
 
 renderer.setAnimationLoop(animate);
 
-const ctlMul = 10;
 
 function render() {
   const now = performance.now();
 
+  const ctlMul = 800;
 
-  if (!ctl1InitialPos &&
-      controller1.position.x !== 0.0 &&
-      controller1.position.y !== 0.0 &&
-      controller1.position.z !== 0.0) {
-    ctl1InitialPos = controller1.position.clone();
-  }
-
-
-  if (ctl1InitialPos) {
-    cursor.position.x =
-      (1 - ctlMul) * ctl1InitialPos.x + ctlMul * controller1.position.x;
+  cursor.position.x =
+      (1 - ctlMul) * camera.position.x + ctlMul * controller1.position.x;
     cursor.position.y =
-      (1 - ctlMul) * ctl1InitialPos.y + ctlMul * controller1.position.y;
+      (1 - ctlMul) * camera.position.y + ctlMul * controller1.position.y + 0.2;
     cursor.position.z =
-      (1 - ctlMul) * ctl1InitialPos.z + ctlMul * controller1.position.z;
+      (1 - ctlMul) * camera.position.z + ctlMul * controller1.position.z;
+
+ // TODO: power?
+//  cursor.position.x = Math.pow(cursor.position.x, 1.1);
+//  cursor.position.y = Math.pow(cursor.position.y, 1.1);
+//  cursor.position.z = Math.pow(cursor.position.z, 1.1);
 
     setWand(controller1.position, cursor.position);
-
-
-  }
 
 
   if (showBoids) {
@@ -422,7 +395,6 @@ function render() {
 
     if ( delta > 1 ) delta = 1; // safety cap on large deltas
     last = now;
-
 
     positionUniforms[ 'time' ].value = now;
     positionUniforms[ 'delta' ].value = delta;
@@ -432,21 +404,11 @@ function render() {
     birdUniforms[ 'time' ].value = now;
     birdUniforms[ 'delta' ].value = delta;
 
-//    velocityUniforms[ 'predator' ].value.set( 0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0 );
-
-//    console.log(23, velocityUniforms['predator'].value);
-
-
-    // should be within a cube with bounds [-.5, .5] */
     velocityUniforms[ 'predator' ].value.set(
-      cursor.position.x/4,
-      (cursor.position.y-1.6)/4,
-      cursor.position.z/4
+      cursor.position.x,
+      cursor.position.y,
+      cursor.position.z
     );
-
-
-//    mouseX = 10000;
-//    mouseY = 10000;
 
     renderer.xr.enabled = false;
     gpuCompute.compute();

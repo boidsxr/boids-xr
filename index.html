@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>three.js webgl - gpgpu - flocking</title>
+    <title>XR GPU Boids</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link type="text/css" rel="stylesheet" href="main.css">
@@ -17,10 +17,6 @@
   </head>
   <body>
 
-    <div id="info">
-      <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - webgl gpgpu birds<br/>
-      Move mouse to disturb birds.
-    </div>
 
     <!--
          TODO: If you're reading this, you may wish to improve this example by
@@ -115,9 +111,8 @@
 
        float limit = SPEED_LIMIT;
 
-       dir = predator * UPPER_BOUNDS - selfPosition;
-//       dir.z = 0.;
-       // dir.z *= 0.6;
+       dir = predator - selfPosition;
+
        dist = length( dir );
        distSquared = dist * dist;
 
@@ -128,7 +123,7 @@
        float preyRadiusSq = preyRadius * preyRadius;
        if ( dist < preyRadius ) {
 
-         f = ( distSquared / preyRadiusSq - 1.0 ) * delta * 100.;
+         f = ( distSquared / preyRadiusSq - 1.0 ) * delta * 50.;
          velocity -= normalize( dir ) * f;
          limit += 5.0;
        }
