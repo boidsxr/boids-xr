@@ -9,7 +9,7 @@ import { VRButton } from './js/VRButton.js';
 import { XRControllerModelFactory } from './js/XRControllerModelFactory.js';
 
 
-// import { xrLog } from './xr-console.module.js';
+//import { xrLog } from './xr-console.module.js';
 
 /* TEXTURE WIDTH FOR SIMULATION */
 const WIDTH = 32;
@@ -104,32 +104,25 @@ let positionUniforms;
 let velocityUniforms;
 let birdUniforms;
 
-let cursor, wandGeometry;
-
+let cursor, wand;
 let controller1, controller2;
-
 
 
 init();
 
+
 /*
+const formatVec = v => `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
 setInterval(() => {
-  const text = `${cursor.position.x.toFixed(2)},
-${cursor.position.y.toFixed(2)},
-${cursor.position.z.toFixed(2)}`;
+  let cwp = new THREE.Vector3(0,0,0);
+  cursor.getWorldPosition(cwp);
+  const text = formatVec(cursor.position) + '\n' + formatVec(cwp);
   xrLog(text, scene);
 }, 1000);
 */
 
 
 animate();
-
-function setWand(p1, p2) {
-  wandGeometry.attributes.position.setXYZ(0, p1.x, p1.y, p1.z);
-  wandGeometry.attributes.position.setXYZ(1, p2.x, p2.y, p2.z);
-  wandGeometry.attributes.position.needsUpdate = true;
-}
-
 
 
 function init() {
@@ -150,20 +143,6 @@ function init() {
   floor.receiveShadow = true;
   scene.add( floor );
 
-  const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
-  const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
-  cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
-  scene.add(cursor);
-
-  // magic wand: line that goes from the controller to the cursor
-  // to keep track of its position
-  const wandMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
-  const wandPoints = [];
-  wandPoints.push( new THREE.Vector3( - 10, 0, 0 ) );
-  wandPoints.push( new THREE.Vector3( 10, 0, 0 ) );
-  wandGeometry = new THREE.BufferGeometry().setFromPoints( wandPoints );
-  const wand = new THREE.Line( wandGeometry, wandMaterial );
-  scene.add(wand);
 
 /*
   const spotLight = new THREE.SpotLight( 0xffffff );
@@ -207,6 +186,20 @@ function init() {
   const controllerGrip2 = renderer.xr.getControllerGrip( 1 );
   controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
   scene.add( controllerGrip2 );
+
+
+  // "wand"
+  const geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, - 1 ) ] );
+  wand = new THREE.Line( geometry );
+  wand.name = 'wand';
+  wand.scale.z = 5;
+  controller1.add(wand);
+
+  const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
+  const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
+  cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
+  cursor.position.set(0,0,-5);
+  controller1.add(cursor);
 
 
   // end VR stuff
@@ -373,22 +366,10 @@ renderer.setAnimationLoop(animate);
 function render() {
   const now = performance.now();
 
-  const ctlMul = 800;
-
-  cursor.position.x =
-      (1 - ctlMul) * camera.position.x + ctlMul * controller1.position.x;
-    cursor.position.y =
-      (1 - ctlMul) * camera.position.y + ctlMul * controller1.position.y + 0.2;
-    cursor.position.z =
-      (1 - ctlMul) * camera.position.z + ctlMul * controller1.position.z;
-
- // TODO: power?
-//  cursor.position.x = Math.pow(cursor.position.x, 1.1);
-//  cursor.position.y = Math.pow(cursor.position.y, 1.1);
-//  cursor.position.z = Math.pow(cursor.position.z, 1.1);
-
-    setWand(controller1.position, cursor.position);
-
+  // update cursor and wand depending on controller position
+  const dist = camera.position.distanceToSquared(controller1.position);
+  cursor.position.z = -5 * dist*dist;
+  wand.scale.z = 5*dist*dist;
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
@@ -404,11 +385,11 @@ function render() {
     birdUniforms[ 'time' ].value = now;
     birdUniforms[ 'delta' ].value = delta;
 
-    velocityUniforms[ 'predator' ].value.set(
-      cursor.position.x,
-      cursor.position.y,
-      cursor.position.z
-    );
+
+    let cwp = new THREE.Vector3(0,0,0);
+    cursor.getWorldPosition(cwp);
+
+    velocityUniforms[ 'predator' ].value.set(cwp.x, cwp.y, cwp.z);
 
     renderer.xr.enabled = false;
     gpuCompute.compute();
