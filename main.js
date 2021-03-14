@@ -92,6 +92,7 @@ if (showBoids) {
 
 let container, stats;
 let camera, scene, renderer;
+let birdsGeometry, birdsMaterial, birdMesh;
 
 const BOUNDS = 800, BOUNDS_HALF = BOUNDS / 2;
 
@@ -110,16 +111,15 @@ let controller1, controller2;
 
 init();
 
-
-/*
-const formatVec = v => `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
+//const formatVec = v => `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
 setInterval(() => {
-  let cwp = new THREE.Vector3(0,0,0);
-  cursor.getWorldPosition(cwp);
-  const text = formatVec(cursor.position) + '\n' + formatVec(cwp);
-  xrLog(text, scene);
+//  const text = formatVec(cursor.position) + '\n' + camera.position.distanceToSquared(controller1.position).toFixed(2);
+//  xrLog(text, scene);
+  birdsGeometry.computeBoundingBox();
+    console.log(JSON.stringify(birdsGeometry.boundingBox, null, 2));
+
 }, 1000);
-*/
+
 
 
 animate();
@@ -130,32 +130,50 @@ function init() {
   document.body.appendChild( container );
 
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, .1, 3000 );
-  camera.position.z = 350;
+  camera.position.z = 400;
+  camera.position.y = -380;
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0x333399 );
   scene.fog = new THREE.Fog( 0x333399, 800, 1000 );
 
-  const floorGeometry = new THREE.BoxGeometry(2500, 10, 2500, 30, 1, 30);
-  const floorMaterial = new THREE.MeshPhongMaterial( { color: 0x00FF00 } );
-  const floor = new THREE.Mesh( floorGeometry, floorMaterial );
-  floor.position.y = -300;
+  const floorGeometry = new THREE.PlaneGeometry(2500, 2500, 30, 30);
+  const floorMaterialMesh = new THREE.MeshPhongMaterial({ color: 0x00dd22, emissive: 0x072534, side: THREE.DoubleSide, flatShading: true });
+  const floor = new THREE.Mesh( floorGeometry, floorMaterialMesh );
+  floor.rotation.x = Math.PI/2;
+  floor.position.y = -1;
   floor.receiveShadow = true;
   scene.add( floor );
 
+  const ballGeometry = new THREE.SphereGeometry(.3, 8, 8);
+  const ballMeshMaterial = new THREE.MeshPhongMaterial( { color: 0xdd3322, emissive: 0x072534, side: THREE.DoubleSide } );
+  const ball = new THREE.Mesh(ballGeometry, ballMeshMaterial);
+  ball.position.set(0,1,-5);
+  ball.castShadow = true;
+  scene.add(ball);
 
-/*
+
   const spotLight = new THREE.SpotLight( 0xffffff );
-  spotLight.position.set( 100, 1000, 100 );
-  spotLight.shadow.camera.near = 100;
-  spotLight.shadow.camera.far = 10000;
-  spotLight.shadow.camera.fov = 50;
+//  spotLight.angle = 1.1;
+//  spotLight.penumbra = 0.2;
+  spotLight.position.set( 0, 100, -5 );
+  spotLight.target.position.set(0, 0, -5);
+  spotLight.penumbra = 0;
+  spotLight.shadow.mapSize.width = 262144;
+  spotLight.shadow.mapSize.height = 262144;
+
+  spotLight.castShadow = true;
+  scene.add( spotLight.target );
   scene.add( spotLight );
-*/
+
+
+//  const helper = new THREE.SpotLightHelper( spotLight );
+//  scene.add( helper );
 
   scene.add( new THREE.HemisphereLight( 0x808080, 0x606060 ) );
 
   renderer = new THREE.WebGLRenderer();
+  renderer.shadowMap.enabled = true;
   renderer.xr.enabled = true;
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -170,7 +188,9 @@ function init() {
   controller1 = renderer.xr.getController( 0 );
   //       controller1.addEventListener( 'selectstart', onSelectStart );
   //       controller1.addEventListener( 'selectend', onSelectEnd );
+  controller1.castShadow = true;
   scene.add( controller1 );
+  console.log(controller1)
 
   controller2 = renderer.xr.getController( 1 );
   //       controller2.addEventListener( 'selectstart', onSelectStart );
@@ -196,9 +216,15 @@ function init() {
   controller1.add(wand);
 
   const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
-  const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
-  cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
+//  const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
+//  const cursorLineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff, transparent: true, opacity: 0.5 } );
+  const cursorMeshMaterial = new THREE.MeshPhongMaterial( { color: 0x156289, emissive: 0x072534, side: THREE.DoubleSide, flatShading: true } );
+//  cursor = new THREE.Group();
+//  cursor.add(new THREE.Mesh(cursorGeometry, cursorMeshMaterial));
+//  cursor.add(new THREE.LineSegments(cursorGeometry, cursorLineMaterial));
+  cursor = new THREE.Mesh(cursorGeometry, cursorMeshMaterial);
   cursor.position.set(0,0,-5);
+  cursor.castShadow = true;
   controller1.add(cursor);
 
 
@@ -296,7 +322,9 @@ function isSafari() {
 
 function initBirds() {
 
-  const geometry = new BirdGeometry();
+  birdsGeometry = new BirdGeometry();
+  birdsGeometry.computeVertexNormals();
+
 
   // For Vertex and Fragment
   birdUniforms = {
@@ -308,15 +336,16 @@ function initBirds() {
   };
 
   // THREE.ShaderMaterial
-  const material = new THREE.ShaderMaterial( {
+  birdsMaterial = new THREE.ShaderMaterial( {
     uniforms: birdUniforms,
     vertexShader: document.getElementById( 'birdVS' ).textContent,
     fragmentShader: document.getElementById( 'birdFS' ).textContent,
     side: THREE.DoubleSide
   } );
 
-  const birdMesh = new THREE.Mesh( geometry, material );
+  birdMesh = new THREE.Mesh(birdsGeometry, birdsMaterial);
   birdMesh.rotation.y = Math.PI / 2;
+  birdMesh.castShadow = true;
   birdMesh.matrixAutoUpdate = false;
   birdMesh.updateMatrix();
 
@@ -368,7 +397,9 @@ function render() {
 
   // update cursor and wand depending on controller position
   const dist = camera.position.distanceToSquared(controller1.position);
-  cursor.position.z = -5 * dist*dist;
+//  cursor.position.z = -2000 * dist*dist;
+//  cursor.position.z = - (796*dist*dist - 396*dist);
+  cursor.position.set(controller1.position.x, controller1.position.y, controller1.position.z )
   wand.scale.z = 5*dist*dist;
 
   if (showBoids) {
