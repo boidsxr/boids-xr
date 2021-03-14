@@ -103,7 +103,7 @@ let positionUniforms;
 let velocityUniforms;
 let birdUniforms;
 
-let cursor, wand;
+let cursor1, cursor2, wand1, wand2;
 let controller1, controller2;
 
 
@@ -191,17 +191,29 @@ function init() {
 
 
   // "wand"
-  const geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 0, - 1 ) ] );
-  wand = new THREE.Line( geometry );
-  wand.name = 'wand';
-  wand.scale.z = 5;
-  controller1.add(wand);
+  const wandGeometry = new THREE.BufferGeometry().setFromPoints(
+    [ new THREE.Vector3( 0, 0, 0 ),
+      new THREE.Vector3( 0, 0, - 1 )
+    ]
+  );
+  wand1 = new THREE.Line( wandGeometry );
+  wand1.name = 'wand1';
+  wand1.scale.z = 5;
+  controller1.add(wand1);
+
+  wand2 = new THREE.Line( wandGeometry );
+  wand2.name = 'wand2';
+  wand2.scale.z = 5;
+  controller2.add(wand2);
 
   const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
   const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
-  cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
-  cursor.position.set(0,0,-5);
-  controller1.add(cursor);
+  cursor1 = new THREE.Mesh(cursorGeometry, cursorMaterial);
+  cursor1.position.set(0,0,-5);
+  controller1.add(cursor1);
+  cursor2 = new THREE.Mesh(cursorGeometry, cursorMaterial);
+  cursor2.position.set(0,0,-5);
+  controller2.add(cursor2);
 
 
   // end VR stuff
@@ -277,7 +289,8 @@ function initComputeRenderer() {
   velocityUniforms[ 'alignmentDistance' ] = { value: 1.0 };
   velocityUniforms[ 'cohesionDistance' ] = { value: 1.0 };
   velocityUniforms[ 'freedomFactor' ] = { value: 1.0 };
-  velocityUniforms[ 'predator' ] = { value: new THREE.Vector3() };
+  velocityUniforms[ 'predator1' ] = { value: new THREE.Vector3() };
+  velocityUniforms[ 'predator2' ] = { value: new THREE.Vector3() };
   velocityVariable.material.defines.BOUNDS = BOUNDS.toFixed( 2 );
 
   velocityVariable.wrapS = THREE.RepeatWrapping;
@@ -368,15 +381,14 @@ renderer.setAnimationLoop(animate);
 function render() {
   const now = performance.now();
 
-  // update cursor and wand depending on controller position
-  const dist = camera.position.distanceToSquared(controller1.position);
-//  cursor.position.z = -5 * dist*dist;
+  // update cursors and wands depending on controller positions
+  const dist1 = camera.position.distanceToSquared(controller1.position);
+  const dist2 = camera.position.distanceToSquared(controller2.position);
 
-  cursor.position.z = dist < 0.2 ? 0 : -1900*dist*dist + 76;
-  wand.scale.z = -cursor.position.z;
-
-//  cursor.position.z = -5*(5315*dist*dist*dist - 1058*dist*dist);
-//  wand.scale.z = -cursor.position.z;
+  cursor1.position.z = dist1 < 0.2 ? 0 : -1900*dist1*dist1 + 76;
+  cursor2.position.z = dist2 < 0.2 ? 0 : -1900*dist2*dist2 + 76;
+  wand1.scale.z = -cursor1.position.z;
+  wand2.scale.z = -cursor2.position.z;
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
@@ -393,10 +405,13 @@ function render() {
     birdUniforms[ 'delta' ].value = delta;
 
 
-    let cwp = new THREE.Vector3(0,0,0);
-    cursor.getWorldPosition(cwp);
+    let cwp1 = new THREE.Vector3(0,0,0);
+    let cwp2 = new THREE.Vector3(0,0,0);
+    cursor1.getWorldPosition(cwp1);
+    cursor2.getWorldPosition(cwp2);
 
-    velocityUniforms[ 'predator' ].value.set(cwp.x, cwp.y, cwp.z);
+    velocityUniforms[ 'predator1' ].value.set(cwp1.x, cwp1.y, cwp1.z);
+    velocityUniforms[ 'predator2' ].value.set(cwp2.x, cwp2.y, cwp2.z);
 
     renderer.xr.enabled = false;
     gpuCompute.compute();

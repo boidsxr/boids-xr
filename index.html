@@ -59,7 +59,8 @@
      uniform float alignmentDistance; // 40
      uniform float cohesionDistance; //
      uniform float freedomFactor;
-     uniform vec3 predator;
+     uniform vec3 predator1;
+     uniform vec3 predator2;
 
      const float width = resolution.x;
      const float height = resolution.y;
@@ -97,8 +98,8 @@
        vec3 selfPosition = texture2D( texturePosition, uv ).xyz;
        vec3 selfVelocity = texture2D( textureVelocity, uv ).xyz;
 
-       float dist;
-       vec3 dir; // direction
+       float dist1, dist2, dist; // directions to each predator and smallest
+       vec3 dir1, dir2, dir; // direction to each predator and nearest
        float distSquared;
 
        float separationSquared = separationDistance * separationDistance;
@@ -111,11 +112,21 @@
 
        float limit = SPEED_LIMIT;
 
-       dir = predator - selfPosition;
+       dir1 = predator1 - selfPosition;
+       dir2 = predator2 - selfPosition;
 
-       dist = length( dir );
+       dist1 = length( dir1 );
+       dist2 = length( dir2 );
+
+       if (dist1 < dist2) {
+         dist = dist1;
+         dir = dir1;
+       } else {
+         dist = dist2;
+         dir = dir2;
+       }
+
        distSquared = dist * dist;
-
 
        // move birds away from predator
 
@@ -132,8 +143,6 @@
 
        // Attract flocks to the center
        vec3 central = vec3( 0., 0., 0. );
-
-//       vec3 central = predator;
 
        dir = selfPosition - central;
        dist = length( dir );
