@@ -9,7 +9,6 @@ import { VRButton } from './js/VRButton.js';
 import { XRControllerModelFactory } from './js/XRControllerModelFactory.js';
 
 
-//import { xrLog } from './xr-console.module.js';
 
 /* TEXTURE WIDTH FOR SIMULATION */
 const WIDTH = 32;
@@ -112,11 +111,12 @@ init();
 
 
 /*
+import { xrLog } from './xr-console.module.js';
 const formatVec = v => `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
 setInterval(() => {
-  let cwp = new THREE.Vector3(0,0,0);
-  cursor.getWorldPosition(cwp);
-  const text = formatVec(cursor.position) + '\n' + formatVec(cwp);
+  const dist = camera.position.distanceToSquared(controller1.position);
+  const zdist = cursor.position.z;
+  const text = `${dist.toFixed(2).toString()}\n${ zdist.toFixed(2)}`;
   xrLog(text, scene);
 }, 1000);
 */
@@ -134,14 +134,16 @@ function init() {
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0x333399 );
-  scene.fog = new THREE.Fog( 0x333399, 800, 1000 );
+//  scene.fog = new THREE.Fog( 0x333399, 800, 1000 );
 
-  const floorGeometry = new THREE.BoxGeometry(2500, 10, 2500, 30, 1, 30);
-  const floorMaterial = new THREE.MeshPhongMaterial( { color: 0x00FF00 } );
-  const floor = new THREE.Mesh( floorGeometry, floorMaterial );
+  const floorGeometry = new THREE.PlaneGeometry(25000, 25000, 30, 30);
+  const floorMaterialMesh = new THREE.MeshPhongMaterial({ color: 0x009922, emissive: 0x072534, side: THREE.DoubleSide, flatShading: true });
+  const floor = new THREE.Mesh( floorGeometry, floorMaterialMesh );
+  floor.rotation.x = Math.PI/2;
   floor.position.y = -300;
   floor.receiveShadow = true;
   scene.add( floor );
+
 
 
 /*
@@ -368,8 +370,13 @@ function render() {
 
   // update cursor and wand depending on controller position
   const dist = camera.position.distanceToSquared(controller1.position);
-  cursor.position.z = -5 * dist*dist;
-  wand.scale.z = 5*dist*dist;
+//  cursor.position.z = -5 * dist*dist;
+
+  cursor.position.z = dist < 0.2 ? 0 : -1900*dist*dist + 76;
+  wand.scale.z = -cursor.position.z;
+
+//  cursor.position.z = -5*(5315*dist*dist*dist - 1058*dist*dist);
+//  wand.scale.z = -cursor.position.z;
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
