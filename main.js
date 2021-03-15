@@ -106,12 +106,14 @@ let birdUniforms;
 let cursor1, cursor2, wand1, wand2;
 let controller1, controller2;
 
+let birdsFollowLeft = false;
+let birdsFollowRight = false;
 
 init();
 
 
+//import { xrLog } from './xr-console.module.js';
 /*
-import { xrLog } from './xr-console.module.js';
 const formatVec = v => `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
 setInterval(() => {
   const dist = camera.position.distanceToSquared(controller1.position);
@@ -125,6 +127,35 @@ setInterval(() => {
 animate();
 
 
+// Skybox stuff
+function createPathStrings(filename) {
+  const basePath = "./images/";
+  const baseFilename = basePath + filename;
+  const fileType = ".jpg";
+
+  // in VR view: right, left, top, bottom, back, front
+  const sides = ["ft", "bk", "up", "dn", "rt", "lf"];
+
+//  const sides = ["Right", "Left", "Top", "Bottom", "Front", "Back"];
+
+  const pathStrings = sides.map(side => baseFilename + "_" + side + fileType);
+  return pathStrings;
+}
+
+
+function createMaterialArray(filename) {
+  const skyboxImagepaths = createPathStrings(filename);
+  const materialArray = skyboxImagepaths.map(image => {
+    let texture = new THREE.TextureLoader().load(image);
+    return new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide }); // <---
+  });
+  return materialArray;
+}
+
+
+// init everything
+
+
 function init() {
   container = document.createElement( 'div' );
   document.body.appendChild( container );
@@ -136,14 +167,19 @@ function init() {
   scene.background = new THREE.Color( 0x333399 );
 //  scene.fog = new THREE.Fog( 0x333399, 800, 1000 );
 
-  const floorGeometry = new THREE.PlaneGeometry(25000, 25000, 30, 30);
-  const floorMaterialMesh = new THREE.MeshPhongMaterial({ color: 0x009922, emissive: 0x072534, side: THREE.DoubleSide, flatShading: true });
-  const floor = new THREE.Mesh( floorGeometry, floorMaterialMesh );
-  floor.rotation.x = Math.PI/2;
-  floor.position.y = -300;
-  floor.receiveShadow = true;
-  scene.add( floor );
+  // const floorGeometry = new THREE.PlaneGeometry(25000, 25000, 30, 30);
+  // const floorMaterialMesh = new THREE.MeshPhongMaterial({ color: 0x009922, emissive: 0x072534, side: THREE.DoubleSide, flatShading: true });
+  // const floor = new THREE.Mesh( floorGeometry, floorMaterialMesh );
+  // floor.rotation.x = Math.PI/2;
+  // floor.position.y = -300;
+  // floor.receiveShadow = true;
+  // scene.add( floor );
 
+  let skyboxImage = "afterrain";
+  const materialArray = createMaterialArray(skyboxImage);
+  const skyboxGeometry = new THREE.BoxGeometry(1000, 1000, 1000);
+  const skybox = new THREE.Mesh(skyboxGeometry, materialArray);
+  scene.add(skybox);
 
 
 /*
@@ -169,14 +205,17 @@ function init() {
 
   // VR controllers
 
+  const toggle1 = () => { birdsFollowRight = !birdsFollowRight; wand1.visible = !wand1.visible };
+  const toggle2 = () => { birdsFollowLeft = !birdsFollowLeft; wand2.visible = !wand2.visible };
+
   controller1 = renderer.xr.getController( 0 );
-  //       controller1.addEventListener( 'selectstart', onSelectStart );
-  //       controller1.addEventListener( 'selectend', onSelectEnd );
+  controller1.addEventListener('selectstart', toggle1);
+  controller1.addEventListener('selectend', toggle1);
   scene.add( controller1 );
 
   controller2 = renderer.xr.getController( 1 );
-  //       controller2.addEventListener( 'selectstart', onSelectStart );
-  //       controller2.addEventListener( 'selectend', onSelectEnd );
+  controller2.addEventListener('selectstart', toggle2);
+  controller2.addEventListener('selectend', toggle2);
   scene.add( controller2 );
 
   const controllerModelFactory = new XRControllerModelFactory();
@@ -199,11 +238,13 @@ function init() {
   wand1 = new THREE.Line( wandGeometry );
   wand1.name = 'wand1';
   wand1.scale.z = 0.5;
+  wand1.visible = false;
   controller1.add(wand1);
 
   wand2 = new THREE.Line( wandGeometry );
   wand2.name = 'wand2';
   wand2.scale.z = 0.5;
+  wand2.visible = false;
   controller2.add(wand2);
 
   const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
@@ -291,8 +332,8 @@ function initComputeRenderer() {
   velocityUniforms[ 'alignmentDistance' ] = { value: 1.0 };
   velocityUniforms[ 'cohesionDistance' ] = { value: 1.0 };
   velocityUniforms[ 'freedomFactor' ] = { value: 1.0 };
-  velocityUniforms[ 'predator1' ] = { value: new THREE.Vector3() };
-  velocityUniforms[ 'predator2' ] = { value: new THREE.Vector3() };
+  velocityUniforms[ 'predator1' ] = { value: new THREE.Vector3(0, 100, -300) };
+  velocityUniforms[ 'predator2' ] = { value: new THREE.Vector3(0, 100, -300) };
   velocityVariable.material.defines.BOUNDS = BOUNDS.toFixed( 2 );
 
   velocityVariable.wrapS = THREE.RepeatWrapping;
@@ -343,9 +384,9 @@ function initBirds() {
 function fillPositionTexture( texture ) {
   const theArray = texture.image.data;
   for ( let k = 0, kl = theArray.length; k < kl; k += 4 ) {
-    const x = Math.random() * BOUNDS - BOUNDS_HALF;
-    const y = Math.random() * BOUNDS - BOUNDS_HALF;
-    const z = Math.random() * BOUNDS - BOUNDS_HALF;
+    const x = Math.random() * BOUNDS/4;
+    const y = Math.random() * BOUNDS/4;
+    const z = Math.random() * BOUNDS/8 - BOUNDS/2;
     theArray[ k + 0 ] = x;
     theArray[ k + 1 ] = y;
     theArray[ k + 2 ] = z;
@@ -395,6 +436,7 @@ function render() {
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
+    let cwp = new THREE.Vector3(0,0,0);
 
     if ( delta > 1 ) delta = 1; // safety cap on large deltas
     last = now;
@@ -407,14 +449,15 @@ function render() {
     birdUniforms[ 'time' ].value = now;
     birdUniforms[ 'delta' ].value = delta;
 
+    if (birdsFollowLeft) {
+      cursor1.getWorldPosition(cwp);
+      velocityUniforms[ 'predator1' ].value.set(cwp.x, cwp.y, cwp.z);
+    }
 
-    let cwp1 = new THREE.Vector3(0,0,0);
-    let cwp2 = new THREE.Vector3(0,0,0);
-    cursor1.getWorldPosition(cwp1);
-    cursor2.getWorldPosition(cwp2);
-
-    velocityUniforms[ 'predator1' ].value.set(cwp1.x, cwp1.y, cwp1.z);
-    velocityUniforms[ 'predator2' ].value.set(cwp2.x, cwp2.y, cwp2.z);
+    if (birdsFollowRight) {
+      cursor2.getWorldPosition(cwp);
+      velocityUniforms[ 'predator2' ].value.set(cwp.x, cwp.y, cwp.z);
+    }
 
     renderer.xr.enabled = false;
     gpuCompute.compute();
