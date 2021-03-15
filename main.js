@@ -198,21 +198,23 @@ function init() {
   );
   wand1 = new THREE.Line( wandGeometry );
   wand1.name = 'wand1';
-  wand1.scale.z = 5;
+  wand1.scale.z = 0.5;
   controller1.add(wand1);
 
   wand2 = new THREE.Line( wandGeometry );
   wand2.name = 'wand2';
-  wand2.scale.z = 5;
+  wand2.scale.z = 0.5;
   controller2.add(wand2);
 
   const cursorGeometry = new THREE.SphereGeometry(.1, 8, 8);
   const cursorMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
   cursor1 = new THREE.Mesh(cursorGeometry, cursorMaterial);
   cursor1.position.set(0,0,-5);
+  cursor1.visible = false;
   controller1.add(cursor1);
   cursor2 = new THREE.Mesh(cursorGeometry, cursorMaterial);
   cursor2.position.set(0,0,-5);
+  cursor2.visible = false;
   controller2.add(cursor2);
 
 
@@ -385,10 +387,11 @@ function render() {
   const dist1 = camera.position.distanceToSquared(controller1.position);
   const dist2 = camera.position.distanceToSquared(controller2.position);
 
-  cursor1.position.z = dist1 < 0.2 ? 0 : -1900*dist1*dist1 + 76;
-  cursor2.position.z = dist2 < 0.2 ? 0 : -1900*dist2*dist2 + 76;
-  wand1.scale.z = -cursor1.position.z;
-  wand2.scale.z = -cursor2.position.z;
+  cursor1.position.z = dist1 < 0.2 ? 0 : -300;
+  cursor2.position.z = dist2 < 0.2 ? 0 : -300;
+
+//  wand1.scale.z = -cursor1.position.z;
+//  wand2.scale.z = -cursor2.position.z;
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
