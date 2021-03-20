@@ -203,10 +203,9 @@ function init() {
   // VR Button
   document.body.appendChild(VRButton.createButton(renderer));
 
-  // VR controllers
-
   const toggle1 = () => { birdsFollowRight = !birdsFollowRight; wand1.visible = !wand1.visible };
   const toggle2 = () => { birdsFollowLeft = !birdsFollowLeft; wand2.visible = !wand2.visible };
+
 
   controller1 = renderer.xr.getController( 0 );
   controller1.addEventListener('selectstart', toggle1);
@@ -229,21 +228,16 @@ function init() {
   scene.add( controllerGrip2 );
 
 
-  // "wand"
-  const wandGeometry = new THREE.BufferGeometry().setFromPoints(
-    [ new THREE.Vector3( 0, 0, 0 ),
-      new THREE.Vector3( 0, 0, - 1 )
-    ]
-  );
-  wand1 = new THREE.Line( wandGeometry );
-  wand1.name = 'wand1';
-  wand1.scale.z = 0.5;
+  const wandGeometry = new THREE.CylinderGeometry( .01, .01, 1, 32 );
+  const wandMaterial = new THREE.MeshPhongMaterial({ color: 0xff6666 });
+  wand1 = new THREE.Mesh( wandGeometry, wandMaterial );
+  wand1.rotation.x = Math.PI/2;
+  wand1.position.z = -.5;
   wand1.visible = false;
   controller1.add(wand1);
-
-  wand2 = new THREE.Line( wandGeometry );
-  wand2.name = 'wand2';
-  wand2.scale.z = 0.5;
+  wand2 = new THREE.Mesh( wandGeometry, wandMaterial );
+  wand2.rotation.x = Math.PI/2;
+  wand2.position.z = -.5;
   wand2.visible = false;
   controller2.add(wand2);
 
@@ -436,7 +430,8 @@ function render() {
 
   if (showBoids) {
     let delta = ( now - last ) / 1000;
-    let cwp = new THREE.Vector3(0,0,0);
+    const cwp1 = new THREE.Vector3(0,0,0);
+    const cwp2 = new THREE.Vector3(0,0,0);
 
     if ( delta > 1 ) delta = 1; // safety cap on large deltas
     last = now;
@@ -449,14 +444,25 @@ function render() {
     birdUniforms[ 'time' ].value = now;
     birdUniforms[ 'delta' ].value = delta;
 
-    if (birdsFollowLeft) {
-      cursor1.getWorldPosition(cwp);
-      velocityUniforms[ 'predator1' ].value.set(cwp.x, cwp.y, cwp.z);
-    }
+    cursor1.getWorldPosition(cwp1);
+    cursor2.getWorldPosition(cwp2);
 
-    if (birdsFollowRight) {
-      cursor2.getWorldPosition(cwp);
-      velocityUniforms[ 'predator2' ].value.set(cwp.x, cwp.y, cwp.z);
+    if (birdsFollowLeft) {
+      if (birdsFollowRight) {
+        velocityUniforms[ 'predator1' ].value.set(cwp2.x, cwp2.y, cwp2.z);
+        velocityUniforms[ 'predator2' ].value.set(cwp1.x, cwp1.y, cwp1.z);
+      } else {
+        velocityUniforms[ 'predator1' ].value.set(cwp2.x, cwp2.y, cwp2.z);
+        velocityUniforms[ 'predator2' ].value.set(cwp2.x, cwp2.y, cwp2.z);
+      }
+    } else {
+      if (birdsFollowRight) {
+        velocityUniforms[ 'predator1' ].value.set(cwp1.x, cwp1.y, cwp1.z);
+        velocityUniforms[ 'predator2' ].value.set(cwp1.x, cwp1.y, cwp1.z);
+      } else {
+        velocityUniforms[ 'predator1' ].value.set(0, -100, -300);
+        velocityUniforms[ 'predator2' ].value.set(0, -100, -300);
+      }
     }
 
     renderer.xr.enabled = false;
