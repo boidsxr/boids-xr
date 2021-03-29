@@ -21,11 +21,9 @@ As is often the case, open and web-based standards follow proprietary formats an
 
 # Combining boids and VR
 
-It's not difficult to imagine the improvements that an immersive experience can bring to the original boids program. While [Reynolds's original animations](https://www.youtube.com/watch?v=86iQiV3-3IA) are still very impressive to watch, we can now bring many of the benefits of VR:
+It's not difficult to imagine the improvements that an immersive experience can bring to the original boids program. While [Reynolds's original animations](https://www.youtube.com/watch?v=86iQiV3-3IA) are still very impressive to watch, we can now bring many of the benefits of VR.
 
-[![Original Boids demo](http://img.youtube.com/vi/86iQiV3-3IA/0.jpg)](http://www.youtube.com/watch?v=86iQiV3-3IA "Original Boids demo")
-
-[![New Boids demo](http://img.youtube.com/vi/KBkX8s5wcAU/0.jpg)](http://www.youtube.com/watch?v=KBkX8s5wcAU "New boids demo")
+[![New Boids demo](thumb1.png)](http://www.youtube.com/watch?v=KBkX8s5wcAU "New boids demo")
 
 
 - immersion: being in the middle of dozens of boids swirling around is even more stunning than watching them on a standard screen.
@@ -51,7 +49,7 @@ Many of those have been included on subsequent implementations, and we could add
 We started by taking the [p5.js implementation of the original algorithm](https://p5js.org/examples/simulate-flocking.html) and integrated it in a VR enfironment using A-frame:
 
 
-[![A-frame Boids demo](http://img.youtube.com/vi/pQDGiX9Lwr0/0.jpg)](http://www.youtube.com/watch?v=pQDGiX9Lwr0 "A-frame boids demo")
+[![A-frame Boids demo](thumb2.png)](http://www.youtube.com/watch?v=pQDGiX9Lwr0 "A-frame boids demo")
 
 
 We then moved on to the [WebGL implementation](https://threejs.org/examples/#webgl_gpgpu_birds) found in the three.js examples. This verion computes the movement of boids using GPGPUs (general-purpose GPUs). This allowed us to increase to multiply the number of boids by 5 with no performance impact.
