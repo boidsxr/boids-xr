@@ -306,7 +306,11 @@
     <!-- It is used with a variable of size 1x1 -->
     <script id="centerOfGravityFragmentShader" type="x-shader/x-fragment">
 
-     vec2 point1 = vec2(0, 0); // for now just return any boid's position
+     vec2 boidIndex1 = vec2(0, 0); // random index in the position texture
+     vec2 boidIndex2 = vec2(32, 0); // another index
+     vec2 boidIndex3 = vec2(0, 32); // another index
+     vec2 boidIndex4 = vec2(32, 32); // another index
+
 
      uniform sampler2D levelTexture; // this will be boids position texture
 
@@ -348,7 +352,13 @@
      }
 
      void main() {
-       vec4 centerOfGravity = texture2D( levelTexture, point1 );
+       vec4 boid1Pos = texture2D( levelTexture, boidIndex1 );
+       vec4 boid2Pos = texture2D( levelTexture, boidIndex2 );
+       vec4 boid3Pos = texture2D( levelTexture, boidIndex3 );
+       vec4 boid4Pos = texture2D( levelTexture, boidIndex4 );
+
+       vec4 centerOfGravity = (boid1Pos + boid2Pos + boid3Pos + boid4Pos) / 4.0;
+
        if ( gl_FragCoord.x < 1.5 ) {
          gl_FragColor = encode_float( centerOfGravity.x );
        } else if ( gl_FragCoord.x < 2.5 ) {
