@@ -103,6 +103,10 @@ let positionUniforms;
 let velocityUniforms;
 let birdUniforms;
 
+let centerOfGravityShader;
+let centerOfGravityRenderTarget;
+let centerOfGravityImage;
+
 let cursor1, cursor2, wand1, wand2;
 let controller1, controller2;
 
@@ -340,6 +344,29 @@ function initComputeRenderer() {
   if ( error !== null ) {
     console.error( error );
   }
+
+  // Create compute shader to read water level
+  centerOfGravityShader = gpuCompute.createShaderMaterial( document.getElementById( 'centerOfGravityFragmentShader' ).textContent, {
+    levelTexture: { value: null }
+  } );
+  centerOfGravityShader.defines.WIDTH = WIDTH.toFixed( 1 );
+  centerOfGravityShader.defines.BOUNDS = BOUNDS.toFixed( 1 );
+
+  // Create a 4x1 pixel image and a render target (Uint8, 4 channels, 1 byte per channel) to read water height and orientation
+  centerOfGravityImage = new Uint8Array( 4 * 1 * 4 );
+
+  centerOfGravityRenderTarget = new THREE.WebGLRenderTarget( 4, 1, {
+    wrapS: THREE.ClampToEdgeWrapping,
+    wrapT: THREE.ClampToEdgeWrapping,
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    depthBuffer: false
+  } );
+
+
+
 }
 
 function isSafari() {
@@ -399,6 +426,28 @@ function fillVelocityTexture( texture ) {
     theArray[ k + 2 ] = z * 10;
     theArray[ k + 3 ] = 1;
   }
+}
+
+
+function centerOfGravity() {
+
+  // push the current position texture to centerOfGravityFragmentShader
+  const currentRenderTarget = gpuCompute.getCurrentRenderTarget(positionVariable);
+  centerOfGravityShader.uniforms[ 'levelTexture' ].value = currentRenderTarget.texture;
+
+
+  // run the shader
+  gpuCompute.doRenderTarget( centerOfGravityShader, centerOfGravityRenderTarget );
+
+
+  // retrieve the results
+  renderer.readRenderTargetPixels(
+    centerOfGravityRenderTarget,
+    0, 0, 4, 1, // x, y, width, height
+    centerOfGravityImage );
+  const pixels = new Float32Array( centerOfGravityImage.buffer );
+
+  return new THREE.Vector3(pixels[0], pixels[1], pixels[2]);
 }
 
 function onWindowResize() {
@@ -472,6 +521,11 @@ function render() {
     birdUniforms[ 'textureVelocity' ].value =
       gpuCompute.getCurrentRenderTarget( velocityVariable ).texture;
     renderer.xr.enabled = true;
+
+    const cog = centerOfGravity();
+//    console.log(cog);
+
+
   }
   renderer.render( scene, camera );
 }
