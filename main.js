@@ -114,6 +114,9 @@ let controller1, controller2;
 let birdsFollowLeft = false;
 let birdsFollowRight = false;
 
+
+let audio;
+
 init();
 
 
@@ -280,7 +283,6 @@ function init() {
 
   window.addEventListener( 'resize', onWindowResize );
 
-
   let gui;
   let effectController;
   if (showBoids) {
@@ -309,6 +311,18 @@ function init() {
 
     initBirds();
   }
+
+
+  // Audio stuff
+  audio = new Audio("pinknoise.mp3");
+  audio.loop = true;
+  document.getElementById('VRButton').addEventListener('click', function() {
+    if (audio.paused) {
+      audio.play();
+    } else {
+      audio.pause();
+    }
+  });
 }
 
 
@@ -537,9 +551,9 @@ function render() {
     centerOfGravityCursor.position.y = cog.y;
     centerOfGravityCursor.position.z = cog.z;
 
-//    console.log(cog);
+    const dist = 1 / (1 + (cog.x*cog.x + cog.y*cog.y + cog.z*cog.z)/50000);
 
-
+    audio.volume = dist;
   }
   renderer.render( scene, camera );
 }
