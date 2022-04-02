@@ -106,7 +106,7 @@ let birdUniforms;
 let centerOfGravityShader;
 let centerOfGravityRenderTarget;
 let centerOfGravityImage;
-let centerOfGravityCursor;
+// let centerOfGravityCursor;
 
 let cursor1, cursor2, wand1, wand2;
 let controller1, controller2;
@@ -203,12 +203,12 @@ function init() {
 
 
   // debug: display center of gravity
-  centerOfGravityCursor = new THREE.Mesh(
-    new THREE.SphereGeometry( 30, 24, 12 ),
-    new THREE.MeshPhongMaterial( { color: 0xFF0000 } )
-  );
+  // centerOfGravityCursor = new THREE.Mesh(
+  //   new THREE.SphereGeometry( 30, 24, 12 ),
+  //   new THREE.MeshPhongMaterial( { color: 0xFF0000 } )
+  // );
 
-  scene.add(centerOfGravityCursor);
+  // scene.add(centerOfGravityCursor);
 
   renderer = new THREE.WebGLRenderer();
   renderer.xr.enabled = true;
@@ -548,9 +548,9 @@ function render() {
     renderer.xr.enabled = true;
 
     const cog = centerOfGravity();
-    centerOfGravityCursor.position.x = cog.x;
-    centerOfGravityCursor.position.y = cog.y;
-    centerOfGravityCursor.position.z = cog.z;
+    // centerOfGravityCursor.position.x = cog.x;
+    // centerOfGravityCursor.position.y = cog.y;
+    // centerOfGravityCursor.position.z = cog.z;
 
     const dist = 1 / (1 + (cog.x*cog.x + cog.y*cog.y + cog.z*cog.z)/50000);
 
