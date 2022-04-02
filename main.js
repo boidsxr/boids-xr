@@ -316,7 +316,8 @@ function init() {
   // Audio stuff
   audio = new Audio("pinknoise.mp3");
   audio.loop = true;
-  document.getElementById('VRButton').addEventListener('click', function() {
+  const button = document.getElementById('VRButton') || document;
+  button.addEventListener('click', function() {
     if (audio.paused) {
       audio.play();
     } else {
