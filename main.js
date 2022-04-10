@@ -106,7 +106,7 @@ let birdUniforms;
 let centerOfGravityShader;
 let centerOfGravityRenderTarget;
 let centerOfGravityImage;
-// let centerOfGravityCursor;
+let centerOfGravityCursor;
 
 let cursor1, cursor2, wand1, wand2;
 let controller1, controller2;
@@ -115,7 +115,7 @@ let birdsFollowLeft = false;
 let birdsFollowRight = false;
 
 
-let audio;
+let sound;
 
 init();
 
@@ -201,14 +201,16 @@ function init() {
 
   scene.add( new THREE.HemisphereLight( 0x808080, 0x606060 ) );
 
+  const listener = new THREE.AudioListener();
+  camera.add( listener );
+
 
   // debug: display center of gravity
-  // centerOfGravityCursor = new THREE.Mesh(
-  //   new THREE.SphereGeometry( 30, 24, 12 ),
-  //   new THREE.MeshPhongMaterial( { color: 0xFF0000 } )
-  // );
-
-  // scene.add(centerOfGravityCursor);
+  centerOfGravityCursor = new THREE.Mesh(
+    new THREE.SphereGeometry( 30, 24, 12 ),
+    new THREE.MeshPhongMaterial( { color: 0xFF0000 } )
+  );
+  scene.add(centerOfGravityCursor);
 
   renderer = new THREE.WebGLRenderer();
   renderer.xr.enabled = true;
@@ -309,21 +311,48 @@ function init() {
     gui.add( effectController, 'cohesion', 0.0, 100, 0.025 ).onChange( valuesChanger );
     gui.close();
 
+  // create the PositionalAudio object (passing in the listener)
+  sound = new THREE.PositionalAudio( listener );
+
+  // load a sound and set it as the PositionalAudio object's buffer
+  const audioLoader = new THREE.AudioLoader();
+
+
+
+  audioLoader.load( 'pinknoise.mp3', function( buffer ) {
+    sound.setBuffer( buffer );
+    sound.loop = true;
+    sound.setRefDistance( 100 );
+    sound.play();
+  });
+
+  const button = document.getElementById('VRButton') || document;
+  button.addEventListener('click', function() {
+    if (sound.paused) {
+      sound.play();
+    } else {
+      sound.pause();
+    }
+  });
+
+
     initBirds();
   }
 
 
+
+
   // Audio stuff
-  audio = new Audio("pinknoise.mp3");
-  audio.loop = true;
-  const button = document.getElementById('VRButton') || document;
-  button.addEventListener('click', function() {
-    if (audio.paused) {
-      audio.play();
-    } else {
-      audio.pause();
-    }
-  });
+  // audio = new Audio("pinknoise.mp3");
+  // audio.loop = true;
+  // const button = document.getElementById('VRButton') || document;
+  // button.addEventListener('click', function() {
+  //   if (audio.paused) {
+  //     audio.play();
+  //   } else {
+  //     audio.pause();
+  //   }
+  // });
 }
 
 
@@ -425,6 +454,8 @@ function initBirds() {
   birdMesh.updateMatrix();
 
   scene.add( birdMesh );
+//  birdMesh.add(sound);
+  centerOfGravityCursor.add(sound);
 }
 
 function fillPositionTexture( texture ) {
@@ -548,13 +579,13 @@ function render() {
     renderer.xr.enabled = true;
 
     const cog = centerOfGravity();
-    // centerOfGravityCursor.position.x = cog.x;
-    // centerOfGravityCursor.position.y = cog.y;
-    // centerOfGravityCursor.position.z = cog.z;
+    centerOfGravityCursor.position.x = cog.x;
+    centerOfGravityCursor.position.y = cog.y;
+    centerOfGravityCursor.position.z = cog.z;
 
-    const dist = 1 / (1 + (cog.x*cog.x + cog.y*cog.y + cog.z*cog.z)/50000);
+//    const dist = 1 / (1 + (cog.x*cog.x + cog.y*cog.y + cog.z*cog.z)/50000);
 
-    audio.volume = dist;
+//    audio.volume = dist;
   }
   renderer.render( scene, camera );
 }
