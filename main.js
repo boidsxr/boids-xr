@@ -326,14 +326,16 @@ function init() {
     sound.play();
   });
 
-  const button = document.getElementById('VRButton') || document;
-  button.addEventListener('click', function() {
-    if (sound.paused) {
-      sound.play();
-    } else {
-      sound.pause();
-    }
-  });
+  // const button = document.getElementById('VRButton') || document;
+  // button.addEventListener('click', function() {
+  //   if (sound.paused) {
+  //     console.log('play');
+  //     sound.play();
+  //   } else {
+  //     sound.pause();
+  //     console.log('pause');
+  //   }
+  // });
 
 
     initBirds();
