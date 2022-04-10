@@ -207,7 +207,7 @@ function init() {
 
   // debug: display center of gravity
   centerOfGravityCursor = new THREE.Mesh(
-    new THREE.SphereGeometry( 30, 24, 12 ),
+    new THREE.SphereGeometry( 1, 24, 12 ),
     new THREE.MeshPhongMaterial( { color: 0xFF0000 } )
   );
   scene.add(centerOfGravityCursor);
