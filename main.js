@@ -115,8 +115,6 @@ let birdsFollowLeft = false;
 let birdsFollowRight = false;
 
 
-let sound;
-
 init();
 
 
@@ -201,8 +199,6 @@ function init() {
 
   scene.add( new THREE.HemisphereLight( 0x808080, 0x606060 ) );
 
-  const listener = new THREE.AudioListener();
-  camera.add( listener );
 
 
   // debug: display center of gravity
@@ -311,51 +307,40 @@ function init() {
     gui.add( effectController, 'cohesion', 0.0, 100, 0.025 ).onChange( valuesChanger );
     gui.close();
 
-  // create the PositionalAudio object (passing in the listener)
-  sound = new THREE.PositionalAudio( listener );
 
-  // load a sound and set it as the PositionalAudio object's buffer
-  const audioLoader = new THREE.AudioLoader();
-
-
-
-  audioLoader.load( 'pinknoise.mp3', function( buffer ) {
-    sound.setBuffer( buffer );
-    sound.loop = true;
-    sound.setRefDistance( 100 );
-    sound.play();
-  });
-
-  // const button = document.getElementById('VRButton') || document;
-  // button.addEventListener('click', function() {
-  //   if (sound.paused) {
-  //     console.log('play');
-  //     sound.play();
-  //   } else {
-  //     sound.pause();
-  //     console.log('pause');
-  //   }
-  // });
-
-
+    const button = document.getElementById('VRButton');
+    button.addEventListener('click', function() {
+      startAudio();
+    });
     initBirds();
   }
-
-
-
-
-  // Audio stuff
-  // audio = new Audio("pinknoise.mp3");
-  // audio.loop = true;
-  // const button = document.getElementById('VRButton') || document;
-  // button.addEventListener('click', function() {
-  //   if (audio.paused) {
-  //     audio.play();
-  //   } else {
-  //     audio.pause();
-  //   }
-  // });
 }
+
+let sound;
+function startAudio() {
+  // create the PositionalAudio object (passing in the listener)
+
+  if (!sound) {
+    const listener = new THREE.AudioListener();
+    camera.add( listener );
+    sound = new THREE.PositionalAudio( listener );
+    //  birdMesh.add(sound);
+    centerOfGravityCursor.add(sound);
+
+    // load a sound and set it as the PositionalAudio object's buffer
+    const audioLoader = new THREE.AudioLoader();
+
+    audioLoader.load( 'pinknoise.mp3', function( buffer ) {
+      sound.setBuffer( buffer );
+      sound.loop = true;
+      sound.setRefDistance( 100 );
+      sound.play();
+
+    });
+  }
+
+}
+
 
 
 function initComputeRenderer() {
@@ -456,8 +441,6 @@ function initBirds() {
   birdMesh.updateMatrix();
 
   scene.add( birdMesh );
-//  birdMesh.add(sound);
-  centerOfGravityCursor.add(sound);
 }
 
 function fillPositionTexture( texture ) {
